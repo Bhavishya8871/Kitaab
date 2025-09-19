@@ -1,0 +1,305 @@
+<div style="display:flex; justify-content:center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+  <div class="profile-container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">👤 My Profile</h1>
+      <p class="page-subtitle">Manage your personal information and preferences</p>
+      <br>
+      <button class="btn btn-primary" (click)="router.navigate(['/homepage'])">
+        Return to Homepage
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-section" *ngIf="isLoading">
+      <div class="loading-container">
+        <div class="loading-spinner large"></div>
+        <p>Loading your profile...</p>
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content" *ngIf="!isLoading && userProfile">
+
+      <!-- Profile Header Card -->
+      <section class="profile-header-section">
+        <div class="card profile-header-card">
+          <div class="profile-avatar">
+            <div class="avatar-circle">
+              {{ userProfile.memberName.charAt(0).toUpperCase() }}
+            </div>
+          </div>
+
+          <div class="profile-info">
+            <h2 class="profile-name">{{ userProfile.memberName }}</h2>
+            <p class="profile-email">{{ userProfile.email }}</p>
+            <div class="profile-meta">
+              <span class="member-id">
+                <strong>Member ID:</strong> {{ userProfile.memberId }}
+              </span>
+              <span class="member-since">
+                <strong>Member since:</strong> {{ getMemberSince() }}
+              </span>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button 
+              class="btn btn-primary" 
+              (click)="toggleEdit()" 
+              *ngIf="!isEditing"
+            >
+              Edit Profile
+            </button>
+            
+            <button 
+              class="btn btn-secondary" 
+              (click)="toggleEdit()" 
+              *ngIf="isEditing"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Messages -->
+      <div class="messages" *ngIf="errorMessage || successMessage">
+        <div class="alert alert-error" *ngIf="errorMessage">
+          <strong>Error:</strong> {{ errorMessage }}
+        </div>
+        <div class="alert alert-success" *ngIf="successMessage">
+          <strong>Success:</strong> {{ successMessage }}
+        </div>
+      </div>
+
+      <!-- Profile Details -->
+      <section class="profile-details-section">
+        <div class="card">
+          <h2 class="section-title">Profile Details</h2>
+          
+          <form [formGroup]="profileForm" (ngSubmit)="onSaveChanges()">
+            <div class="form-grid">
+              
+              <!-- Full Name -->
+              <div class="form-group">
+                <label for="memberName" class="form-label">
+                  Full Name <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="memberName"
+                  formControlName="memberName"
+                  class="form-control"
+                  [class.readonly]="!isEditing"
+                  [readonly]="!isEditing"
+                  placeholder="Enter your full name"
+                />
+                <div class="field-error" *ngIf="getFieldError('memberName')">
+                  {{ getFieldError('memberName') }}
+                </div>
+                <div class="field-hint" *ngIf="isEditing">
+                  Only letters and spaces allowed, 2-50 characters
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="form-group">
+                <label for="email" class="form-label">
+                  Email Address <span class="required">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  formControlName="email"
+                  class="form-control"
+                  [class.readonly]="!isEditing"
+                  [readonly]="!isEditing"
+                  placeholder="Enter your email address"
+                />
+                <div class="field-error" *ngIf="getFieldError('email')">
+                  {{ getFieldError('email') }}
+                </div>
+              </div>
+
+              <!-- Phone Number -->
+              <div class="form-group">
+                <label for="phone" class="form-label">
+                  Phone Number <span class="required">*</span>
+                </label>
+                <div class="phone-input-group" [class.readonly]="!isEditing">
+                  <select
+                    formControlName="countryCode"
+                    class="country-code-select"
+                    [disabled]="!isEditing"
+                  >
+                    <option *ngFor="let country of countryCodes" [value]="country.dialCode">
+                      {{ country.dialCode }} {{ country.name }}
+                    </option>
+                  </select>
+                  <input
+                    type="tel"
+                    id="phone"
+                    formControlName="mobileNumber"
+                    class="form-control phone-input"
+                    [class.readonly]="!isEditing"
+                    [readonly]="!isEditing"
+                    placeholder="Enter 10-digit mobile number"
+                  />
+                </div>
+                <div class="field-error" *ngIf="getFieldError('mobileNumber')">
+                  {{ getFieldError('mobileNumber') }}
+                </div>
+                <div class="field-hint" *ngIf="isEditing">
+                  Enter 10-digit mobile number without country code
+                </div>
+              </div>
+
+              <!-- Address -->
+              <div class="form-group full-width">
+                <label for="address" class="form-label">
+                  Address <span class="optional">(Optional)</span>
+                </label>
+                <textarea
+                  id="address"
+                  formControlName="address"
+                  class="form-control textarea"
+                  [class.readonly]="!isEditing"
+                  [readonly]="!isEditing"
+                  placeholder="Enter your address"
+                  rows="3"
+                ></textarea>
+                <div class="field-error" *ngIf="getFieldError('address')">
+                  {{ getFieldError('address') }}
+                </div>
+                <div class="field-hint" *ngIf="isEditing">
+                  Maximum 100 characters
+                </div>
+              </div>
+            </div>
+
+            <!-- Non-editable Information -->
+            <div class="readonly-info">
+              <h3 class="readonly-title">Account Information</h3>
+              <div class="readonly-grid">
+                <div class="readonly-item">
+                  <label>Member ID</label>
+                  <span>{{ userProfile.memberId }}</span>
+                </div>
+                <div class="readonly-item">
+                  <label>Date of Birth</label>
+                  <span>{{ userProfile.dateOfBirth | date:'longDate' }}</span>
+                </div>
+                <div class="readonly-item">
+                  <label>Account Created</label>
+                  <span>{{ userProfile.memberSince | date:'medium' }}</span>
+                </div>
+              </div>
+              <p class="readonly-note">
+                Member ID and Date of Birth cannot be changed. Contact support if correction is needed.
+              </p>
+            </div>
+
+            <!-- Save Button -->
+            <div class="form-actions" *ngIf="isEditing">
+              <button 
+                type="submit" 
+                class="btn btn-primary btn-large"
+                [disabled]="profileForm.invalid || isSaving"
+              >
+                <span *ngIf="isSaving" class="loading-spinner"></span>
+                {{ isSaving ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+      
+      <!-- PASSWORD CHANGE SECTION -->
+      <section class="password-change-section card">
+        <h2 class="section-title">Change Password</h2>
+
+        <!-- Success Message -->
+        <div *ngIf="passwordChangeSuccess" class="alert alert-success" role="alert">
+          {{ passwordChangeSuccess }}
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="passwordChangeError" class="alert alert-error" role="alert">
+          {{ passwordChangeError }}
+        </div>
+
+        <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()">
+          <div class="form-group">
+            <label for="currentPassword" class="form-label">
+              Current Password <span class="required">*</span>
+            </label>
+            <input
+              type="password"
+              id="currentPassword"
+              formControlName="currentPassword"
+              class="form-control"
+              [class.invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"
+              placeholder="Enter your current password"
+            />
+            <div class="field-error" *ngIf="getPasswordFieldError('currentPassword')">
+              {{ getPasswordFieldError('currentPassword') }}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="newPassword" class="form-label">
+                New Password <span class="required">*</span>
+              </label>
+              <input
+                type="password"
+                id="newPassword"
+                formControlName="newPassword"
+                class="form-control"
+                [class.invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"
+                placeholder="Enter new password"
+              />
+              <div class="field-error" *ngIf="getPasswordFieldError('newPassword')">
+                {{ getPasswordFieldError('newPassword') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword" class="form-label">
+                Confirm New Password <span class="required">*</span>
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                formControlName="confirmPassword"
+                class="form-control"
+                [class.invalid]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched || passwordForm.errors?.['passwordMismatch']"
+                placeholder="Confirm new password"
+              />
+              <div class="field-error" *ngIf="getPasswordFieldError('confirmPassword')">
+                {{ getPasswordFieldError('confirmPassword') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid || isChangingPassword">
+              <span *ngIf="isChangingPassword" class="loading-spinner"></span>
+              {{ isChangingPassword ? 'Changing Password...' : 'Change Password' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+    </div>
+
+    <!-- No Profile Found -->
+    <div class="no-profile" *ngIf="!isLoading && !userProfile">
+      <h3>Profile Not Found</h3>
+      <p>Unable to load your profile information.</p>
+    </div>
+
+  </div>
+</div>

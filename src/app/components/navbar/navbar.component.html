@@ -1,0 +1,81 @@
+<nav class="modern-navbar" (click)="closeAllDropdowns()">
+  <div class="navbar-container">
+    
+    <!-- Left: Brand/Logo -->
+    <div class="navbar-brand">
+      <a routerLink="/homepage">
+        <span class="brand-icon">📚</span>
+        <span class="brand-text">Only Books</span>
+      </a>
+    </div>
+
+    <!-- Center: Navigation Links -->
+    <ul class="navbar-nav">
+      <li><a routerLink="/homepage" routerLinkActive="active">Home</a></li>
+      <li><a routerLink="/view" routerLinkActive="active">View and Borrow Books</a></li>
+      <li><a routerLink="/borrowed-returned" routerLinkActive="active">My Books</a></li>
+      <li><a routerLink="/donate" routerLinkActive="active">Donate Books</a></li>
+      <li><a routerLink="/complaints" routerLinkActive="active">Complaints</a></li>
+    </ul>
+
+    <!-- Right: Search + User Profile -->
+    <div class="navbar-actions">
+      <!-- Search Icon -->
+      <button class="search-btn" (click)="onSearchSubmit()" aria-label="Search Books">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- User Profile -->
+      <div class="user-profile" (click)="toggleProfileDropdown(); $event.stopPropagation()">
+        <span class="user-name">{{ currentUser?.memberName || 'User' }}</span>
+        <div class="user-avatar">
+          <span class="profile-avatar">👤</span>
+        </div>
+        
+        <!-- Dropdown Menu -->
+        <div class="profile-dropdown" [class.show]="showProfileDropdown">
+          <div class="dropdown-header">
+            <div class="user-info">
+              <strong>{{ currentUser?.memberName || 'User' }}</strong>
+              <small>{{ currentUser?.email || 'user@example.com' }}</small>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" (click)="navigateToProfile()">
+            <span class="item-icon">👤</span> My Profile
+          </button>
+          
+<button class="dropdown-item" (click)="navigateToMyBooks()">
+            <span class="item-icon">📚</span> My Books
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item logout-item" (click)="logout()">
+            <span class="item-icon">🚪</span> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-toggle" (click)="toggleMobileMenu()">
+      <span class="hamburger-line" [class.active]="showMobileMenu"></span>
+      <span class="hamburger-line" [class.active]="showMobileMenu"></span>
+      <span class="hamburger-line" [class.active]="showMobileMenu"></span>
+    </button>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" [class.show]="showMobileMenu">
+    <a routerLink="/homepage" class="mobile-link" (click)="toggleMobileMenu()">Home</a>
+    <a routerLink="/search" class="mobile-link" (click)="toggleMobileMenu()">View Books</a>
+    <a routerLink="/borrow" class="mobile-link" (click)="toggleMobileMenu()">Borrow Books</a>
+    <a routerLink="/borrowed-returned" class="mobile-link" (click)="toggleMobileMenu()">My Books</a>
+    <a routerLink="/donate" class="mobile-link" (click)="toggleMobileMenu()">Donate Books</a>
+    <a routerLink="/complaints" class="mobile-link" (click)="toggleMobileMenu()">Complaints</a>
+    <hr class="mobile-divider">
+    <a (click)="navigateToProfile(); toggleMobileMenu()" class="mobile-link">My Profile</a>
+    <a (click)="logout(); toggleMobileMenu()" class="mobile-link logout">Logout</a>
+  </div>
+</nav>

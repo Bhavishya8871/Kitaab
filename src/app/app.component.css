@@ -1,0 +1,30 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.with-navbar {
+  margin-top: 70px; /* Adjust based on your navbar height */
+  flex: 1;
+  padding: 0;
+}
+
+.without-navbar {
+  flex: 1;
+  padding: 0;
+  margin-top: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .with-navbar {
+    margin-top: 60px; /* Smaller margin on mobile */
+  }
+}
+
+/* Smooth transitions */
+main {
+  transition: margin-top 0.3s ease-in-out;
+}

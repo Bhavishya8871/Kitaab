@@ -1,0 +1,249 @@
+<app-navbar></app-navbar>
+<div style="display: flex; justify-content: center;background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="my-books-container">
+  
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">📚 My Books</h1>
+    <p class="page-subtitle">Track your reading history and manage borrowed books</p>
+  </div>
+
+  <!-- Statistics Cards -->
+  <section class="statistics-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info">
+          <span class="stat-number">{{ totalBorrowedBooks }}</span>
+          <span class="stat-label">Total Borrowed</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📖</div>
+        <div class="stat-info">
+          <span class="stat-number">{{ currentlyBorrowedBooks }}</span>
+          <span class="stat-label">Currently Borrowed</span>
+        </div>
+      </div>
+
+      <div class="stat-card" [class.warning]="overdueBooks > 0">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-info">
+          <span class="stat-number">{{ overdueBooks }}</span>
+          <span class="stat-label">Overdue</span>
+        </div>
+      </div>
+
+      <div class="stat-card" [class.warning]="totalFines > 0">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <span class="stat-number">₹{{ totalFines }}</span>
+          <span class="stat-label">Total Fines</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fines-section" *ngIf="totalFines >= 0">
+  <div class="card fine-warning-card">
+    <div class="section-header">
+      <h2 class="section-title">💳 Outstanding Fines</h2>
+      <button class="btn btn-primary" routerLink="/fines">
+        Pay ₹{{ totalFines }}
+      </button>
+    </div>
+    <p>You have {{ overdueBooks }} overdue book(s) with total fines of ₹{{ totalFines }}.</p>
+  </div>
+</section>
+
+  <!-- Filters Section -->
+  <section class="filters-section">
+    <div class="card">
+      <h2 class="section-title">🔍 Filter History</h2>
+      
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-fields">
+          <div class="form-group">
+            <label for="startDate" class="form-label">From Date</label>
+            <input
+              type="date"
+              id="startDate"
+              formControlName="startDate"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="endDate" class="form-label">To Date</label>
+            <input
+              type="date"
+              id="endDate"
+              formControlName="endDate"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" formControlName="status" class="form-control">
+              <option value="all">All Status</option>
+              <option value="borrowed">Currently Borrowed</option>
+              <option value="returned">Returned</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+
+          <div class="form-group actions-group">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">
+              🗑️ Clear
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" (click)="exportToPDF()" [disabled]="filteredHistory.length === 0">
+              📄 Export PDF
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Error Message -->
+  <div class="error-section" *ngIf="errorMessage">
+    <div class="alert alert-error">
+      <strong>❌ Error:</strong> {{ errorMessage }}
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-section" *ngIf="isLoading">
+    <div class="loading-container">
+      <div class="loading-spinner large"></div>
+      <p>Loading your borrow history...</p>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <section class="history-section" *ngIf="!isLoading">
+    <div class="card">
+      <div class="section-header">
+        <h2 class="section-title">📋 Borrow History</h2>
+        <div class="results-count" *ngIf="filteredHistory.length > 0">
+          Showing {{ filteredHistory.length }} of {{ borrowHistory.length }} records
+        </div>
+      </div>
+
+      <!-- Desktop Table -->
+      <div class="table-container desktop-table">
+        <table class="history-table" *ngIf="filteredHistory.length > 0">
+          <thead>
+            <tr>
+              <th>Book ID</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Borrow Date</th>
+              <th>Due Date</th>
+              <th>Return Date</th>
+              <th>Fine</th>
+              <th>Status</th>
+              <th>Days Info</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              *ngFor="let record of filteredHistory; trackBy: trackByRecordId"
+              [class.overdue-row]="record.status === 'Overdue'"
+            >
+              <td class="book-id">{{ record.bookId }}</td>
+              <td class="book-title">{{ record.title }}</td>
+              <td class="book-author">{{ record.author }}</td>
+              <td class="date">{{ record.borrowDate | date:'shortDate' }}</td>
+              <td class="date">{{ record.dueDate | date:'shortDate' }}</td>
+              <td class="date">
+                {{ record.returnedDate ? (record.returnedDate | date:'shortDate') : 'Not Returned' }}
+              </td>
+              <td class="fine-amount" [class.has-fine]="record.fineAmount > 0">
+                ₹{{ record.fineAmount }}
+              </td>
+              <td class="status">
+                <span class="status-badge" [class]="getStatusClass(record.status)">
+                  {{ record.status }}
+                </span>
+              </td>
+              <td class="days-info">
+                <span *ngIf="record.status === 'Borrowed'" class="days-remaining">
+                  {{ getDaysUntilDue(record.dueDate) }} days left
+                </span>
+                <span *ngIf="record.status === 'Overdue'" class="days-overdue">
+                  {{ getMathAbs(getDaysUntilDue(record.dueDate)) }} days overdue
+                </span>
+                <span *ngIf="record.status === 'Returned'">Completed</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="mobile-cards">
+        <div 
+          class="history-card" 
+          *ngFor="let record of filteredHistory; trackBy: trackByRecordId"
+          [class.overdue-card]="record.status === 'Overdue'"
+        >
+          <div class="card-header">
+            <h3 class="card-title">{{ record.title }}</h3>
+            <span class="status-badge" [class]="getStatusClass(record.status)">
+              {{ record.status }}
+            </span>
+          </div>
+          
+          <div class="card-content">
+            <p><strong>Book ID:</strong> {{ record.bookId }}</p>
+            <p><strong>Author:</strong> {{ record.author }}</p>
+            <p><strong>Borrow Date:</strong> {{ record.borrowDate | date:'shortDate' }}</p>
+            <p><strong>Due Date:</strong> {{ record.dueDate | date:'shortDate' }}</p>
+            <p><strong>Return Date:</strong> {{ record.returnedDate ? (record.returnedDate | date:'shortDate') : 'Not returned' }}</p>
+            
+            <div class="card-footer">
+              <div class="fine-info" *ngIf="record.fineAmount > 0">
+                <span class="fine-label">Fine:</span>
+                <span class="fine-amount">₹{{ record.fineAmount }}</span>
+              </div>
+              
+              <div class="days-info" *ngIf="record.status !== 'Returned'">
+                <span *ngIf="record.status === 'Borrowed'" class="days-remaining">
+                  {{ getDaysUntilDue(record.dueDate) }} days left
+                </span>
+                <span *ngIf="record.status === 'Overdue'" class="days-overdue">
+                  {{ getMathAbs(getDaysUntilDue(record.dueDate)) }} days overdue
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No History Message -->
+      <div class="no-history" *ngIf="filteredHistory.length === 0 && !isLoading">
+        <div class="no-history-icon">📭</div>
+        <h3>No borrow history found</h3>
+        <p *ngIf="borrowHistory.length === 0">You haven't borrowed any books yet.</p>
+        <p *ngIf="borrowHistory.length > 0">No records match your current filter criteria.</p>
+        
+        <div class="action-buttons">
+          <button class="btn btn-primary" (click)="navigateToSearchBooks()" *ngIf="borrowHistory.length === 0">
+            📚 Browse Books
+          </button>
+          <button class="btn btn-secondary" (click)="clearFilters()" *ngIf="borrowHistory.length > 0">
+            🔄 Clear Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+ 
+  
+</div>
+</div>
+

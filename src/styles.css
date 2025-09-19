@@ -1,0 +1,50 @@
+/* You can add global styles to this file, and also import other style files */
+
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Fine Alert Styles */
+.fine-alert-section {
+  margin: 20px 0;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  color: #856404;
+  border: 2px solid #ffeaa7;
+  padding: 15px 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert-link {
+  color: #856404;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.alert-link:hover {
+  color: #533f03;
+}
+
+/* Fine Badge in Navbar */
+.fine-badge {
+  background: #e74c3c;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+/* Fine Warning Card */
+.fine-warning-card {
+  border-left: 4px solid #e74c3c;
+  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+}

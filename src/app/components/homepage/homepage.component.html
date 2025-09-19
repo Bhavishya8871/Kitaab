@@ -1,0 +1,209 @@
+<app-navbar></app-navbar>
+<div class="homepage-container" (click)="closeDropdowns()">
+  <!-- Navigation Bar -->
+  
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="welcome-message">
+        <h1 class="hero-title" style="margin-top: 20px;">
+          Welcome, {{ currentUser?.memberName || "Member" }}! 📚
+        </h1>
+        <p class="hero-subtitle">
+          Discover your next favorite book from our extensive digital library
+          collection
+        </p>
+      </div>
+
+      <div class="hero-actions">
+        <button
+          class="btn btn-primary hero-btn"
+          (click)="navigateToViewBooks()"
+        >
+          Browse Books
+        </button>
+        <button
+          class="btn btn-secondary hero-btn"
+          (click)="navigateToBorrowBooks()"
+        >
+          Quick Borrow
+        </button>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats">
+        <div class="stat-item">
+          <span class="stat-number">10,000+</span>
+          <span class="stat-label">Books Available</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">50+</span>
+          <span class="stat-label">Categories</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">24/7</span>
+          <span class="stat-label">Access</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Popular Books Section -->
+  <section class="popular-books-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Popular Books 🌟</h2>
+        <p class="section-subtitle">Most borrowed books by our community</p>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="isLoading">
+        <div class="loading-spinner"></div>
+        <p>Loading popular books...</p>
+      </div>
+
+      <!-- Books Grid -->
+      <div class="books-grid" *ngIf="!isLoading">
+        <div class="book-card" *ngFor="let book of popularBooks">
+          <div class="book-image-container">
+            <!-- Replace the img tag in the books grid section -->
+            <img
+              [src]="book.imageUrl"
+              [alt]="book.title"
+              class="book-image"
+              (error)="onImageError($event)"
+            />
+
+            <div class="book-overlay">
+              <button class="overlay-btn" (click)="viewBookDetails(book)">
+                View Details
+              </button>
+              <button
+                class="overlay-btn primary"
+                (click)="borrowBook(book)"
+                [disabled]="!book.isAvailable || book.availableCopies === 0"
+              >
+                {{ book.availableCopies > 0 ? "Borrow" : "Not Available" }}
+              </button>
+            </div>
+
+            <!-- Availability Badge -->
+            <div
+              class="availability-badge"
+              [class.available]="book.isAvailable && book.availableCopies > 0"
+              [class.unavailable]="
+                !book.isAvailable || book.availableCopies === 0
+              "
+            >
+              {{
+                book.availableCopies > 0
+                  ? book.availableCopies + " Available"
+                  : "Out of Stock"
+              }}
+            </div>
+          </div>
+
+          <div class="book-info">
+            <h3 class="book-title">{{ book.title }}</h3>
+            <p class="book-author">by {{ book.author }}</p>
+            <p class="book-category">{{ book.category }}</p>
+
+            <!-- Rating -->
+            <div class="book-rating">
+              <div class="stars">
+                <span
+                  class="star filled"
+                  *ngFor="let star of getStarArray(book.rating || 0)"
+                  >★</span
+                >
+                <span class="star half" *ngIf="hasHalfStar(book.rating || 0)"
+                  >★</span
+                >
+                <span
+                  class="star empty"
+                  *ngFor="let star of getEmptyStarArray(book.rating || 0)"
+                  >☆</span
+                >
+              </div>
+              <span class="rating-text">({{ book.rating }}/5)</span>
+            </div>
+
+            <!-- Borrow Count -->
+          </div>
+        </div>
+      </div>
+
+      <!-- View More Button -->
+      <div class="section-footer" *ngIf="!isLoading">
+        <button
+          class="btn btn-outline view-more-btn"
+          (click)="navigateToViewBooks()"
+        >
+          View All Books →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <h2 class="section-title">Library Features 🚀</h2>
+
+      <div class="features-grid">
+        <div class="feature-card" (click)="navigateToViewBooks()">
+          <div class="feature-icon">📚</div>
+          <h3>Browse Books</h3>
+          <p>
+            Explore our vast collection of books across multiple genres and
+            categories
+          </p>
+        </div>
+
+        <div class="feature-card" (click)="navigateToBorrowBooks()">
+          <div class="feature-icon">📖</div>
+          <h3>Easy Borrowing</h3>
+          <p>
+            Borrow books instantly with our simple and user-friendly borrowing
+            system
+          </p>
+        </div>
+
+        <div class="feature-card" (click)="navigateToBorrowedBooks()">
+          <div class="feature-icon">📋</div>
+          <h3>Track Books</h3>
+          <p>
+            Keep track of your borrowed books, due dates, and reading history
+          </p>
+        </div>
+
+        <div class="feature-card" (click)="navigateToDonateBooks()">
+          <div class="feature-icon">🎁</div>
+          <h3>Donate Books</h3>
+          <p>
+            Contribute to our community by donating books you no longer need
+          </p>
+        </div>
+
+        <div class="feature-card" (click)="navigateToComplaints()">
+          <div class="feature-icon">💬</div>
+          <h3>Support</h3>
+          <p>
+            Get help and register complaints through our dedicated support
+            system
+          </p>
+        </div>
+
+        <div class="feature-card" (click)="navigateToProfile()">
+          <div class="feature-icon">👤</div>
+          <h3>Profile</h3>
+          <p>
+            Manage your account, update personal information, and preferences
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

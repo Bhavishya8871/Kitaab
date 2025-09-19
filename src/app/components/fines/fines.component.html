@@ -1,0 +1,585 @@
+<app-navbar></app-navbar>
+
+<div style="display:flex; justify-content:center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+  <div class="fines-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">💳 Fine Payments</h1>
+    <p class="page-subtitle">
+      Pay your overdue book fines securely and track payment history
+    </p>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages-section" *ngIf="errorMessage || successMessage">
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <strong>❌ Error:</strong> {{ errorMessage }}
+    </div>
+    <div class="alert alert-success" *ngIf="successMessage">
+      <strong>✅ Success:</strong> {{ successMessage }}
+    </div>
+  </div>
+
+  <!-- Fine Statistics -->
+  <section class="statistics-section">
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <span class="stat-number">₹{{ totalPendingFines }}</span>
+          <span class="stat-label">Total Pending Fines</span>
+        </div>
+      </div>
+
+      <div class="stat-card books">
+        <div class="stat-icon">📚</div>
+        <div class="stat-info">
+          <span class="stat-number">{{ totalBooksOverdue }}</span>
+          <span class="stat-label">Overdue Books</span>
+        </div>
+      </div>
+
+      <div class="stat-card selected" *ngIf="selectedFines.size > 0">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <span class="stat-number">₹{{ getSelectedTotal() }}</span>
+          <span class="stat-label">Selected for Payment</span>
+        </div>
+      </div>
+
+      <div class="stat-card history">
+        <div class="stat-icon">📋</div>
+        <div class="stat-info">
+          <span class="stat-number">{{ paymentHistory.length }}</span>
+          <span class="stat-label">Payment Records</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-spinner large"></div>
+    <p>Loading your fine information...</p>
+  </div>
+
+  <!-- No Fines -->
+  <section class="no-fines-section" *ngIf="!isLoading && fines.length === 0">
+    <div class="card">
+      <div class="no-fines">
+        <div class="no-fines-icon">🎉</div>
+        <h3>No Outstanding Fines!</h3>
+        <p>You have no pending fines. All your books are returned on time.</p>
+        <div class="action-buttons">
+          <button class="btn btn-primary" (click)="navigateToBooks()">
+            📚 Browse Books
+          </button>
+          <button class="btn btn-outline" (click)="navigateToMyBooks()">
+            📖 My Books
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Outstanding Fines Section -->
+  <section class="fines-section" *ngIf="!isLoading && fines.length > 0">
+    <div class="card">
+      <div class="section-header">
+        <h2 class="section-title">📋 Outstanding Fines</h2>
+        <div class="selection-controls">
+          <button class="btn btn-sm btn-outline" (click)="onSelectAllFines()">
+            Select All
+          </button>
+          <button class="btn btn-sm btn-outline" (click)="onDeselectAllFines()">
+            Clear Selection
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            (click)="onPaySelected()"
+            [disabled]="selectedFines.size === 0"
+          >
+            💳 Pay Selected (₹{{ getSelectedTotal() }})
+          </button>
+        </div>
+      </div>
+
+      <!-- Fines List -->
+      <div class="fines-list">
+        <div
+          class="fine-card"
+          *ngFor="let fine of fines; trackBy: trackByFineId"
+        >
+          <div class="fine-header">
+            <!-- ✅ Fixed Checkbox Section -->
+            <div class="fine-checkbox">
+              <input
+                type="checkbox"
+                [id]="'fine-' + fine.id"
+                [checked]="selectedFines.has(fine.id)"
+                (change)="onFineSelectionChange(fine.id, $event)"
+              />
+              <label [for]="'fine-' + fine.id" class="checkbox-label"></label>
+            </div>
+
+            <div class="fine-info">
+              <h4 class="book-title">{{ fine.bookTitle }}</h4>
+              <p class="book-author">by {{ fine.author }}</p>
+              <div class="fine-details">
+                <span class="due-date"
+                  >Due: {{ fine.dueDate | date : "shortDate" }}</span
+                >
+                <span class="overdue-badge"
+                  >{{ getDaysOverdueText(fine.daysOverdue) }} overdue</span
+                >
+              </div>
+            </div>
+
+            <div class="fine-amount">
+              <span class="amount">₹{{ fine.totalFine }}</span>
+              <span class="calculation"
+                >{{ fine.daysOverdue }} × ₹{{ fine.dailyFine }}/day</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Important Notice -->
+      <div class="payment-notice">
+        <div class="notice-content">
+          <h5>📌 Important Payment Information</h5>
+          <ul>
+            
+            <li>Partial payments are not allowed</li>
+            <li>You cannot borrow new books until all fines are cleared</li>
+            <li>
+              Payment receipt will be available for download after successful
+              payment
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Payment History Section -->
+  <section class="history-section" *ngIf="paymentHistory.length > 0">
+    <div class="card">
+      <div class="section-header">
+        <h2 class="section-title">📊 Payment History</h2>
+        <span class="results-count"
+          >{{ paymentHistory.length }} payment(s) found</span
+        >
+      </div>
+
+      <div class="payment-history-list">
+        <div
+          class="payment-card"
+          *ngFor="let payment of paymentHistory; trackBy: trackByPaymentId"
+        >
+          <div class="payment-header">
+            <div class="payment-info">
+              <div class="payment-id">
+                <strong>{{ payment.transactionId }}</strong>
+                <span class="payment-date">{{
+                  payment.paymentDate | date : "medium"
+                }}</span>
+              </div>
+              <div class="payment-method">
+                <span class="method-icon">{{
+                  getPaymentMethodIcon(payment.paymentMethod)
+                }}</span>
+                <span class="method-name">{{
+                  payment.paymentMethod | titlecase
+                }}</span>
+              </div>
+            </div>
+
+            <div class="payment-amount">
+              <span class="amount">₹{{ payment.amount }}</span>
+              <span
+                class="status-badge"
+                [class]="getStatusClass(payment.status)"
+              >
+                {{ payment.status | titlecase }}
+              </span>
+            </div>
+          </div>
+
+          <div class="payment-books">
+            <h5>Books Paid For:</h5>
+            <div class="book-list">
+              <div class="book-item" *ngFor="let fine of payment.fineRecords">
+                <span class="book-name">{{ fine.bookTitle }}</span>
+                <span class="book-fine">₹{{ fine.totalFine }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="payment-actions">
+            <button
+              class="btn btn-sm btn-outline"
+              (click)="onViewReceipt(payment)"
+            >
+              👁️ View Receipt
+            </button>
+            <button
+              class="btn btn-sm btn-secondary"
+              (click)="onDownloadReceipt(payment)"
+            >
+              📥 Download Receipt
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" *ngIf="showPaymentModal">
+    <div class="modal-content payment-modal">
+      <div class="modal-header">
+        <h3>💳 Pay Fines</h3>
+        <button class="btn-close" (click)="closePaymentModal()">✕</button>
+      </div>
+
+      <div class="modal-body" *ngIf="!showPaymentForm">
+        <!-- Payment Method Selection -->
+        <div class="payment-summary">
+          <h4>Payment Summary</h4>
+          <div class="summary-details">
+            <div class="summary-row">
+              <span>Selected Fines:</span>
+              <span>{{ selectedFines.size }} item(s)</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total Amount:</span>
+              <span>₹{{ getSelectedTotal() }}</span>
+            </div>
+          </div>
+
+          <div class="selected-books">
+            <h5>Books:</h5>
+            <div class="book-summary" *ngFor="let fine of getSelectedFines()">
+              <span class="book-title">{{ fine.bookTitle }}</span>
+              <span class="book-fine">₹{{ fine.totalFine }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-methods">
+          <h4>Select Payment Method</h4>
+          <div class="methods-grid">
+            <div
+              class="method-card"
+              *ngFor="let method of paymentMethods"
+              (click)="onPaymentMethodSelect(method)"
+            >
+              <div class="method-icon">{{ method.icon }}</div>
+              <div class="method-info">
+                <h5>{{ method.name }}</h5>
+                <p>{{ method.description }}</p>
+                <span class="processing-time">{{ method.processingTime }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Form -->
+      <div class="modal-body" *ngIf="showPaymentForm && selectedPaymentMethod">
+        <div class="payment-form-container">
+          <div class="form-header">
+            <h4>
+              {{ selectedPaymentMethod.icon }} {{ selectedPaymentMethod.name }}
+            </h4>
+            <p>Enter your payment details below</p>
+          </div>
+
+          <form [formGroup]="paymentForm" class="payment-form">
+            <!-- Card Payment Form -->
+            <div
+              class="form-section"
+              *ngIf="selectedPaymentMethod.id === 'card'"
+            >
+              <div class="form-group">
+                <label class="form-label">Card Number *</label>
+                <input
+                  type="text"
+                  formControlName="cardNumber"
+                  class="form-control"
+                  placeholder="1234 5678 9012 3456"
+                  maxlength="19"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Cardholder Name *</label>
+                <input
+                  type="text"
+                  formControlName="cardName"
+                  class="form-control"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Expiry Month *</label>
+                  <select formControlName="expiryMonth" class="form-control">
+                    <option value="">Month</option>
+                    <option
+                      *ngFor="
+                        let month of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                      "
+                      [value]="month"
+                    >
+                      {{ month.toString().padStart(2, "0") }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Expiry Year *</label>
+                  <select formControlName="expiryYear" class="form-control">
+                    <option value="">Year</option>
+                    <option
+                      *ngFor="
+                        let year of [2024, 2025, 2026, 2027, 2028, 2029, 2030]
+                      "
+                      [value]="year"
+                    >
+                      {{ year }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">CVV *</label>
+                  <input
+                    type="text"
+                    formControlName="cvv"
+                    class="form-control"
+                    placeholder="123"
+                    maxlength="4"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- UPI Payment Form -->
+            <div
+              class="form-section"
+              *ngIf="selectedPaymentMethod.id === 'upi'"
+            >
+              <div class="form-group">
+                <label class="form-label">UPI ID *</label>
+                <input
+                  type="text"
+                  formControlName="upiId"
+                  class="form-control"
+                  placeholder="yourname@paytm"
+                />
+              </div>
+
+              <div class="upi-info">
+                <p>
+                  💡 You can also pay using UPI apps like PhonePe, Google Pay,
+                  Paytm, etc.
+                </p>
+              </div>
+            </div>
+
+            <!-- Net Banking Form -->
+            <div
+              class="form-section"
+              *ngIf="selectedPaymentMethod.id === 'netbanking'"
+            >
+              <div class="form-group">
+                <label class="form-label">Select Your Bank *</label>
+                <select formControlName="bankName" class="form-control">
+                  <option value="">Choose your bank</option>
+                  <option value="sbi">State Bank of India</option>
+                  <option value="hdfc">HDFC Bank</option>
+                  <option value="icici">ICICI Bank</option>
+                  <option value="axis">Axis Bank</option>
+                  <option value="kotak">Kotak Mahindra Bank</option>
+                  <option value="pnb">Punjab National Bank</option>
+                  <option value="bob">Bank of Baroda</option>
+                </select>
+              </div>
+
+              <div class="banking-info">
+                <p>
+                  🏦 You will be redirected to your bank's secure login page
+                </p>
+              </div>
+            </div>
+
+            <!-- Wallet Payment Form -->
+            <div
+              class="form-section"
+              *ngIf="selectedPaymentMethod.id === 'wallet'"
+            >
+              <div class="form-group">
+                <label class="form-label">Wallet Provider *</label>
+                <select formControlName="walletProvider" class="form-control">
+                  <option value="">Choose wallet</option>
+                  <option value="paytm">Paytm Wallet</option>
+                  <option value="phonepay">PhonePe Wallet</option>
+                  <option value="googlepay">Google Pay</option>
+                  <option value="amazonpay">Amazon Pay</option>
+                  <option value="mobikwik">MobiKwik</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Wallet Number/ID</label>
+                <input
+                  type="text"
+                  formControlName="walletNumber"
+                  class="form-control"
+                  placeholder="Registered mobile number or wallet ID"
+                />
+              </div>
+            </div>
+          </form>
+
+          <!-- Payment Summary -->
+          <div class="payment-summary-box">
+            <div class="summary-row">
+              <span>Amount to Pay:</span>
+              <span class="amount">₹{{ getSelectedTotal() }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Processing Fee:</span>
+              <span>₹0</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total:</span>
+              <span class="amount">₹{{ getSelectedTotal() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" *ngIf="showPaymentModal">
+        <button
+          class="btn btn-secondary"
+          (click)="closePaymentModal()"
+          [disabled]="isProcessingPayment"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-primary"
+          *ngIf="showPaymentForm"
+          (click)="onSubmitPayment()"
+          [disabled]="isProcessingPayment"
+        >
+          <span *ngIf="isProcessingPayment" class="loading-spinner"></span>
+          {{
+            isProcessingPayment
+              ? "Processing Payment..."
+              : "💳 Pay ₹" + getSelectedTotal()
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal-overlay" *ngIf="showReceiptModal && selectedReceipt">
+    <div class="modal-content receipt-modal">
+      <div class="modal-header">
+        <h3>📄 Payment Receipt</h3>
+        <button class="btn-close" (click)="closeReceiptModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="receipt-content">
+          <div class="receipt-header">
+            <h2>Payment Receipt</h2>
+            <div class="receipt-ids">
+              <p>
+                <strong>Transaction ID:</strong>
+                {{ selectedReceipt.transactionId }}
+              </p>
+              <p>
+                <strong>Payment ID:</strong> {{ selectedReceipt.paymentId }}
+              </p>
+              <p>
+                <strong>Date:</strong>
+                {{ selectedReceipt.paymentDate | date : "medium" }}
+              </p>
+            </div>
+          </div>
+
+          <div class="receipt-details">
+            <div class="detail-section">
+              <h4>Member Information</h4>
+              <p><strong>Name:</strong> {{ selectedReceipt.memberName }}</p>
+              <p><strong>Member ID:</strong> {{ selectedReceipt.memberId }}</p>
+            </div>
+
+            <div class="detail-section">
+              <h4>Payment Information</h4>
+              <p><strong>Amount:</strong> ₹{{ selectedReceipt.amount }}</p>
+              <p>
+                <strong>Method:</strong>
+                {{ selectedReceipt.paymentMethod | titlecase }}
+              </p>
+              <p>
+                <strong>Status:</strong>
+                {{ selectedReceipt.status | titlecase }}
+              </p>
+            </div>
+
+            <div class="detail-section">
+              <h4>Fine Details</h4>
+              <div class="fine-details-table">
+                <div class="table-row header">
+                  <span>Book Title</span>
+                  <span>Days Overdue</span>
+                  <span>Fine Amount</span>
+                </div>
+                <div
+                  class="table-row"
+                  *ngFor="let fine of selectedReceipt.fineRecords"
+                >
+                  <span>{{ fine.bookTitle }}</span>
+                  <span>{{ fine.daysOverdue }} days</span>
+                  <span>₹{{ fine.totalFine }}</span>
+                </div>
+                <div class="table-row total">
+                  <span><strong>Total</strong></span>
+                  <span></span>
+                  <span
+                    ><strong>₹{{ selectedReceipt.amount }}</strong></span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeReceiptModal()">
+          Close
+        </button>
+        <button
+          class="btn btn-primary"
+          (click)="onDownloadReceipt(selectedReceipt)"
+        >
+          📥 Download Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  
+</div>
+</div>

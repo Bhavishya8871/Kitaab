@@ -1,0 +1,511 @@
+<app-navbar></app-navbar>
+<div style="display: flex; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+  <div class="complaints-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">🎧 Customer Support</h1>
+      <p class="page-subtitle">
+        Register complaints and track their resolution status
+      </p>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-section" *ngIf="errorMessage || successMessage">
+      <div class="alert alert-error" *ngIf="errorMessage">
+        <strong>❌ Error:</strong> {{ errorMessage }}
+      </div>
+      <div class="alert alert-success" *ngIf="successMessage">
+        <strong>✅ Success:</strong> {{ successMessage }}
+      </div>
+    </div>
+
+    <!-- Complaint Statistics -->
+    <section class="statistics-section">
+      <div class="stats-grid">
+        <div class="stat-card open">
+          <div class="stat-icon">📝</div>
+          <div class="stat-info">
+            <span class="stat-number">{{ complaintStats.openComplaints || 0 }}</span>
+            <span class="stat-label">Open</span>
+          </div>
+        </div>
+
+        <div class="stat-card in-progress">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <span class="stat-number">{{ complaintStats.inProgressComplaints || 0 }}</span>
+            <span class="stat-label">In Progress</span>
+          </div>
+        </div>
+
+        <div class="stat-card resolved">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <span class="stat-number">{{ complaintStats.resolvedComplaints || 0 }}</span>
+            <span class="stat-label">Resolved</span>
+          </div>
+        </div>
+
+        <div class="stat-card closed">
+          <div class="stat-icon">🔒</div>
+          <div class="stat-info">
+            <span class="stat-number">{{ complaintStats.closedComplaints || 0 }}</span>
+            <span class="stat-label">Closed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Register Complaint Section -->
+    <section class="register-section">
+      <div class="card">
+        <div class="section-header">
+          <h2 class="section-title">📝 Register Complaint</h2>
+          <button
+            class="btn btn-primary"
+            (click)="onShowRegistrationForm()"
+            *ngIf="!showRegistrationForm"
+          >
+            📝 Register Complaint
+          </button>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="complaint-form-container" *ngIf="showRegistrationForm">
+          <form
+            [formGroup]="complaintForm"
+            (ngSubmit)="onSubmitComplaint()"
+            class="complaint-form"
+          >
+            <!-- Form Header -->
+            <div class="form-header">
+              <h3>
+                {{
+                  editingComplaintId
+                    ? "Edit Complaint"
+                    : "New Complaint Registration"
+                }}
+              </h3>
+              <p>
+                Please provide detailed information to help us resolve your
+                issue quickly.
+              </p>
+            </div>
+
+            <div class="form-grid">
+              <!-- Complaint Category -->
+              <div class="form-group">
+                <label for="category" class="form-label">
+                  Complaint Category <span class="required">*</span>
+                </label>
+                <select
+                  id="category"
+                  formControlName="category"
+                  class="form-control"
+                  [class.error]="getFieldError('category')"
+                >
+                  <option value="">Select a category</option>
+                  <option
+                    *ngFor="let category of complaintCategories"
+                    [value]="category"
+                  >
+                    {{ category }}
+                  </option>
+                </select>
+                <div class="field-error" *ngIf="getFieldError('category')">
+                  {{ getFieldError("category") }}
+                </div>
+              </div>
+
+              <!-- Membership ID (Display Only) -->
+              <div class="form-group">
+                <label class="form-label">Membership ID</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  [value]="currentUser?.memberId || ''"
+                  readonly
+                />
+                <div class="field-hint">
+                  Your membership ID is automatically filled
+                </div>
+              </div>
+
+              <!-- Complaint Title -->
+              <div class="form-group full-width">
+                <label for="title" class="form-label">
+                  Complaint Title <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  formControlName="title"
+                  class="form-control"
+                  placeholder="Brief summary of your complaint (10-100 characters)"
+                  [class.error]="getFieldError('title')"
+                  maxlength="100"
+                />
+                <div class="field-error" *ngIf="getFieldError('title')">
+                  {{ getFieldError("title") }}
+                </div>
+                <div class="character-count">
+                  {{ complaintForm.get("title")?.value?.length || 0 }}/100
+                  characters
+                </div>
+              </div>
+
+              <!-- Complaint Description -->
+              <div class="form-group full-width">
+                <label for="description" class="form-label">
+                  Complaint Description <span class="required">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  formControlName="description"
+                  class="form-control textarea"
+                  rows="6"
+                  placeholder="Please provide detailed information about your complaint to help us resolve it effectively (20-500 characters)"
+                  [class.error]="getFieldError('description')"
+                  maxlength="500"
+                ></textarea>
+                <div class="field-error" *ngIf="getFieldError('description')">
+                  {{ getFieldError("description") }}
+                </div>
+                <div class="character-count">
+                  {{ complaintForm.get("description")?.value?.length || 0 }}/500
+                  characters
+                </div>
+              </div>
+
+              <!-- Contact Preference -->
+              <div class="form-group">
+                <label class="form-label">
+                  Contact Preference <span class="required">*</span>
+                </label>
+                <div class="radio-group">
+                  <div
+                    class="radio-item"
+                    *ngFor="let preference of contactPreferences"
+                  >
+                    <input
+                      type="radio"
+                      [id]="'contact-' + preference.toLowerCase()"
+                      [value]="preference"
+                      formControlName="contactPreference"
+                    />
+                    <label
+                      [for]="'contact-' + preference.toLowerCase()"
+                      class="radio-label"
+                    >
+                      {{ preference }}
+                    </label>
+                  </div>
+                </div>
+                <div
+                  class="field-error"
+                  *ngIf="getFieldError('contactPreference')"
+                >
+                  {{ getFieldError("contactPreference") }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="onCancelForm()"
+                [disabled]="isSubmitting"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline"
+                (click)="onResetForm()"
+                [disabled]="isSubmitting"
+              >
+                🗑️ Reset
+              </button>
+
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="!isFormValid() || isSubmitting"
+              >
+                <span *ngIf="isSubmitting" class="loading-spinner"></span>
+                {{
+                  isSubmitting
+                    ? "Submitting..."
+                    : editingComplaintId
+                    ? "Update Complaint"
+                    : "📝 Submit Complaint"
+                }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- View Complaints Section -->
+    <section class="complaints-section">
+      <div class="card">
+        <div class="section-header">
+          <h2 class="section-title">📋 My Complaints</h2>
+          <div class="results-count" *ngIf="complaints.length > 0">
+            {{ complaints.length }} complaint(s) found
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-container" *ngIf="isLoading">
+          <div class="loading-spinner large"></div>
+          <p>Loading your complaints...</p>
+        </div>
+
+        <!-- No Complaints -->
+        <div
+          class="no-complaints"
+          *ngIf="!isLoading && complaints.length === 0"
+        >
+          <div class="no-complaints-icon">📭</div>
+          <h3>You have not registered any complaints</h3>
+          <p>
+            When you register a complaint, it will appear here for tracking.
+          </p>
+          <button class="btn btn-primary" (click)="onShowRegistrationForm()">
+            📝 Register Your First Complaint
+          </button>
+        </div>
+
+        <!-- Complaints List -->
+        <div
+          class="complaints-list"
+          *ngIf="!isLoading && complaints.length > 0"
+        >
+          <div
+            class="complaint-card"
+            *ngFor="let complaint of complaints; trackBy: trackByComplaintId"
+            [class]="getStatusClass(complaint.status)"
+          >
+            <div class="complaint-header">
+              <div class="complaint-id">
+                <strong>{{ complaint.id }}</strong>
+                <span
+                  class="priority-badge"
+                  [class]="getPriorityClass(complaint.priority)"
+                >
+                  {{ complaint.priority }}
+                </span>
+              </div>
+              <div class="complaint-status">
+                <span
+                  class="status-badge"
+                  [class]="getStatusClass(complaint.status)"
+                >
+                  {{ complaint.status }}
+                </span>
+              </div>
+            </div>
+
+            <div class="complaint-content">
+              <div class="complaint-info">
+                <h4 class="complaint-title">{{ complaint.title }}</h4>
+                <p class="complaint-category">📂 {{ complaint.category }}</p>
+                <p class="complaint-description">
+                  {{ complaint.description | slice : 0 : 100
+                  }}{{ complaint.description.length > 100 ? "..." : "" }}
+                </p>
+
+                <div class="complaint-meta">
+                  <span class="submission-date"
+                    >📅 Submitted:
+                    {{ complaint.submissionDate | date : "medium" }}</span
+                  >
+                  <span class="last-updated"
+                    >🔄 Updated:
+                    {{ complaint.lastUpdated | date : "medium" }}</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="complaint-actions">
+              <button
+                class="btn btn-outline btn-sm"
+                (click)="onViewComplaint(complaint)"
+              >
+                👁️ View Details
+              </button>
+
+              <button
+                class="btn btn-secondary btn-sm"
+                (click)="onEditComplaint(complaint)"
+                *ngIf="canEditComplaint(complaint)"
+              >
+                ✏️ Edit
+              </button>
+
+              <button
+                class="btn btn-success btn-sm"
+                (click)="onConfirmResolution(complaint.id)"
+                *ngIf="canConfirmResolution(complaint)"
+                [disabled]="isUpdating"
+              >
+                ✅ Confirm Resolution
+              </button>
+
+              <button
+                class="btn btn-warning btn-sm"
+                (click)="onReopenComplaint(complaint.id)"
+                *ngIf="canReopenComplaint(complaint)"
+                [disabled]="isUpdating"
+              >
+                🔄 Reopen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Complaint Details Modal -->
+    <div
+      class="modal-overlay"
+      *ngIf="showComplaintDetails && selectedComplaint"
+    >
+      <div class="modal-content complaint-modal">
+        <div class="modal-header">
+          <h3>🎧 Complaint Details</h3>
+          <button class="btn-close" (click)="onCloseComplaintDetails()">
+            ✕
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="complaint-details">
+            <!-- Complaint Header Info -->
+            <div class="detail-header">
+              <div class="detail-id">
+                <h4>{{ selectedComplaint.id }}</h4>
+                <div class="badges">
+                  <span
+                    class="status-badge"
+                    [class]="getStatusClass(selectedComplaint.status)"
+                  >
+                    {{ selectedComplaint.status }}
+                  </span>
+                  <span
+                    class="priority-badge"
+                    [class]="getPriorityClass(selectedComplaint.priority)"
+                  >
+                    {{ selectedComplaint.priority }} Priority
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="detail-section">
+              <h5>Basic Information</h5>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Category:</span>
+                  <span class="detail-value">{{
+                    selectedComplaint.category
+                  }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Title:</span>
+                  <span class="detail-value">{{
+                    selectedComplaint.title
+                  }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Contact Preference:</span>
+                  <span class="detail-value">{{
+                    selectedComplaint.contactPreference
+                  }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Submitted:</span>
+                  <span class="detail-value">{{
+                    selectedComplaint.submissionDate | date : "full"
+                  }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Last Updated:</span>
+                  <span class="detail-value">{{
+                    selectedComplaint.lastUpdated | date : "full"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="detail-section">
+              <h5>Full Complaint Description</h5>
+              <div class="description-content">
+                {{ selectedComplaint.description }}
+              </div>
+            </div>
+
+            <!-- Support Response -->
+            <div
+              class="detail-section"
+              *ngIf="selectedComplaint.supportResponse"
+            >
+              <h5>Response from Support Team</h5>
+              <div class="response-content">
+                {{ selectedComplaint.supportResponse }}
+              </div>
+            </div>
+
+            <!-- Resolution Notes -->
+            <div
+              class="detail-section"
+              *ngIf="selectedComplaint.resolutionNotes"
+            >
+              <h5>Resolution Notes</h5>
+              <div class="notes-content">
+                {{ selectedComplaint.resolutionNotes }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="onCloseComplaintDetails()">
+            Close
+          </button>
+
+          <button
+            class="btn btn-success"
+            (click)="onConfirmResolution(selectedComplaint.id)"
+            *ngIf="canConfirmResolution(selectedComplaint)"
+            [disabled]="isUpdating"
+          >
+            <span *ngIf="isUpdating" class="loading-spinner"></span>
+            {{ isUpdating ? "Processing..." : "✅ Confirm Resolution" }}
+          </button>
+
+          <button
+            class="btn btn-warning"
+            (click)="onReopenComplaint(selectedComplaint.id)"
+            *ngIf="canReopenComplaint(selectedComplaint)"
+            [disabled]="isUpdating"
+          >
+            <span *ngIf="isUpdating" class="loading-spinner"></span>
+            {{ isUpdating ? "Processing..." : "🔄 Reopen Complaint" }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    
+    
+  </div>
+</div>

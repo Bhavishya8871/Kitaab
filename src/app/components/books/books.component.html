@@ -1,0 +1,455 @@
+<app-navbar></app-navbar>
+
+<div style="display: flex; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="books-container">
+  
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">📚 Books Library</h1>
+    <p class="page-subtitle">Browse, search, and borrow books from our extensive collection</p>
+  </div>
+
+  <!-- User Account Section -->
+  <section class="user-section" *ngIf="currentUser && userBorrowInfo">
+    <div class="card user-card">
+      <div class="user-info">
+        <div class="user-details">
+          <h3>{{ currentUser.memberName }}</h3>
+          <p>{{ currentUser.email }}</p>
+          <p>Member ID: {{ currentUser.memberId }}</p>
+        </div>
+        
+        <div class="borrow-stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ userBorrowInfo.currentBorrowedCount }}</span>
+            <span class="stat-label">Current Books</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ MAX_BOOKS_PER_USER - userBorrowInfo.currentBorrowedCount }}</span>
+            <span class="stat-label">Available Slots</span>
+          </div>
+          <div class="stat-item" [class.warning]="userBorrowInfo.fines > 0">
+            <span class="stat-value">₹{{ userBorrowInfo.fines }}</span>
+            <span class="stat-label">Pending Fines</span>
+          </div>
+          <div class="stat-item" [class.warning]="userBorrowInfo.overdueBooks > 0">
+            <span class="stat-value">{{ userBorrowInfo.overdueBooks }}</span>
+            <span class="stat-label">Overdue Books</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading User Info -->
+  <section class="user-section" *ngIf="isLoadingUser">
+    <div class="card">
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading your account information...</p>
+      </div>
+    </div>
+  </section>
+
+  
+
+  <!-- Messages -->
+  <div class="messages-section" *ngIf="errorMessage || successMessage">
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <strong>❌ Error:</strong> {{ errorMessage }}
+    </div>
+    <div class="alert alert-success" *ngIf="successMessage">
+      <strong>✅ Success:</strong> {{ successMessage }}
+    </div>
+  </div>
+
+  <!-- Search Section -->
+  <section class="search-section">
+    <div class="card">
+      <h2 class="section-title">🔍 Search & Filter Books</h2>
+      
+      <form [formGroup]="searchForm" class="search-form">
+        <!-- Main Search Row -->
+        <div class="search-row-main">
+          <div class="search-input-group">
+            <input
+              type="text"
+              formControlName="query"
+              class="search-input"
+              placeholder="Search for books, authors, categories, or book IDs..."
+            />
+            <button type="button" class="search-button" (click)="performSearch()">
+              🔍 Search
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="search-filters">
+          <div class="filter-group">
+            <label class="filter-label">Search In:</label>
+            <select formControlName="searchType" class="filter-select">
+              <option *ngFor="let type of searchTypes" [value]="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Category:</label>
+            <select formControlName="category" class="filter-select">
+              <option value="">All Categories</option>
+              <option *ngFor="let category of categories" [value]="category.name">
+                {{ category.name }} ({{ category.count }})
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Availability:</label>
+            <select formControlName="availabilityFilter" class="filter-select">
+              <option value="all">All Books</option>
+              <option value="available">Available Only</option>
+              <option value="unavailable">Unavailable Only</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Sort By:</label>
+            <select formControlName="sortBy" class="filter-select">
+              <option *ngFor="let sort of sortOptions" [value]="sort.value">
+                {{ sort.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Order:</label>
+            <select formControlName="sortOrder" class="filter-select">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <button type="button" class="btn-clear" (click)="clearSearch()">
+              🗑️ Clear
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Selection Summary (when books are selected) -->
+  <section class="selection-section" *ngIf="selectedBooks.size > 0">
+    <div class="card">
+      <div class="selection-summary">
+        <div class="selection-info">
+          <h3>📖 Selected Books ({{ getTotalSelectedCopies() }})</h3>
+          <div class="selected-books-list">
+            <div class="selected-book-item" *ngFor="let item of getSelectedBookDetails()">
+              <span class="book-info">{{ item.quantity }}x {{ item.book.title }}</span>
+              <span class="book-author">by {{ item.book.author }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="selection-actions">
+          <button class="btn btn-primary btn-large" (click)="onBorrowSelected()" [disabled]="isBorrowing">
+            <span *ngIf="isBorrowing" class="loading-spinner"></span>
+            {{ isBorrowing ? 'Processing...' : '📚 Borrow Selected Books' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading State -->
+  <div class="loading-section" *ngIf="isSearching">
+    <div class="loading-container">
+      <div class="loading-spinner large"></div>
+      <p>Searching for books...</p>
+    </div>
+  </div>
+
+  <!-- Search Results -->
+  <section class="results-section" *ngIf="searchResults && !isSearching">
+    <div class="card">
+      <div class="results-header">
+        <h2 class="section-title">📋 Search Results</h2>
+        <div class="results-meta" *ngIf="hasSearched">
+          <span class="results-count">{{ searchResults.totalCount }} book(s) found</span>
+          <span class="search-term" *ngIf="searchResults.searchTerm !== 'All Books'">
+            for "{{ searchResults.searchTerm }}"
+          </span>
+        </div>
+      </div>
+
+      <!-- No Results -->
+      <div class="no-results" *ngIf="searchResults.totalCount === 0">
+        <div class="no-results-icon">📭</div>
+        <h3>No Books Found</h3>
+        <p><strong>This book is currently unavailable. Select a different category or book.</strong></p>
+        <div class="no-results-suggestions">
+          <h4>Try:</h4>
+          <ul>
+            <li>Checking your spelling</li>
+            <li>Using different keywords</li>
+            <li>Searching in all fields</li>
+            <li>Browsing by category</li>
+          </ul>
+        </div>
+        <button class="btn btn-primary" (click)="clearSearch()">
+          🔄 Show All Books
+        </button>
+      </div>
+
+      <!-- Books Grid -->
+      <div class="books-grid" *ngIf="searchResults.totalCount > 0">
+        <div 
+          class="book-card" 
+          *ngFor="let book of searchResults.books; trackBy: trackByBookId"
+          [class.unavailable]="!book.isAvailable || book.availableCopies === 0"
+        >
+          <div class="book-image-container" (click)="onBookClick(book)">
+            <img 
+              [src]="book.imageUrl" 
+              [alt]="book.title"
+              class="book-image"
+              (error)="onImageError($event)"
+            />
+            <div class="book-overlay">
+              <span class="view-details">👁️ View Details</span>
+            </div>
+          </div>
+
+          <div class="book-info">
+            <div class="book-header">
+              <h3 class="book-title" (click)="onBookClick(book)">{{ book.title }}</h3>
+              <span class="availability-badge" [class]="getAvailabilityClass(book)">
+                {{ getAvailabilityText(book) }}
+              </span>
+            </div>
+
+            <p class="book-author">👤 {{ book.author }}</p>
+            <p class="book-category">📂 {{ book.category }}</p>
+            <p class="book-isbn">📋 ISBN: {{ book.isbn }}</p>
+            
+            <div class="book-rating" *ngIf="book.rating">
+              <div class="stars">
+                <span *ngFor="let i of [1,2,3,4,5]" 
+                      class="star" 
+                      [class.filled]="i <= book.rating!">⭐</span>
+              </div>
+              <span class="rating-text">{{ book.rating }}/5</span>
+            </div>
+
+            <div class="book-availability">
+              <div class="availability-info">
+                <span class="copies-available">
+                  📚 {{ book.availableCopies }}/{{ book.totalCopies }} available
+                </span>
+                <span class="publish-year" *ngIf="book.publishYear">
+                  📅 {{ book.publishYear }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Quantity Selection (for available books) -->
+            <div class="quantity-section" *ngIf="book.isAvailable && book.availableCopies > 0">
+              <label class="quantity-label">Quantity to Borrow:</label>
+              <div class="quantity-input-group">
+                <input
+                  type="number"
+                  class="quantity-input"
+                  min="0"
+                  [max]="book.availableCopies"
+                  [value]="selectedBooks.get(book.id) || 0"
+                  (change)="onQuantityChange(book.id, $event)"
+                  placeholder="0"
+                />
+                <span class="max-copies">Max: {{ book.availableCopies }}</span>
+              </div>
+            </div>
+
+            <div class="book-actions">
+              <button 
+                class="btn btn-primary btn-sm"
+                (click)="onBorrowBook(book)"
+                [disabled]="!book.isAvailable || book.availableCopies === 0 || isBorrowing"
+              >
+                <span *ngIf="book.isAvailable && book.availableCopies > 0">📖 Borrow Now</span>
+                <span *ngIf="!book.isAvailable || book.availableCopies === 0">❌ Unavailable</span>
+              </button>
+              
+              <button 
+                class="btn btn-outline btn-sm"
+                (click)="onCheckAvailability(book)"
+              >
+                ℹ️ Check Status
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Book Details Modal -->
+  <div class="modal-overlay" *ngIf="showBookModal && selectedBook">
+    <div class="modal-content book-modal">
+      <div class="modal-header">
+        <h3>📚 Book Details</h3>
+        <button class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="book-details-container">
+          <div class="book-details-image">
+            <img 
+              [src]="selectedBook.imageUrl" 
+              [alt]="selectedBook.title"
+              class="book-detail-image"
+              (error)="onImageError($event)"
+            />
+            <div class="book-status-badge" [class]="getAvailabilityClass(selectedBook)">
+              {{ getAvailabilityText(selectedBook) }}
+            </div>
+          </div>
+          
+          <div class="book-details-info">
+            <h4 class="book-detail-title">{{ selectedBook.title }}</h4>
+            <p class="book-detail-author">by {{ selectedBook.author }}</p>
+            
+            <div class="book-meta">
+              <div class="meta-row">
+                <span class="meta-label">Category:</span>
+                <span class="meta-value">{{ selectedBook.category }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">ISBN:</span>
+                <span class="meta-value">{{ selectedBook.isbn }}</span>
+              </div>
+              <div class="meta-row" *ngIf="selectedBook.publishYear">
+                <span class="meta-label">Published:</span>
+                <span class="meta-value">{{ selectedBook.publishYear }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Availability:</span>
+                <span class="meta-value">{{ selectedBook.availableCopies }}/{{ selectedBook.totalCopies }} copies</span>
+              </div>
+            </div>
+
+            <div class="book-description" *ngIf="selectedBook.description">
+              <h5>Description:</h5>
+              <p>{{ selectedBook.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeModal()">Close</button>
+        <button 
+          class="btn btn-primary"
+          (click)="onBorrowBook(selectedBook); closeModal()"
+          [disabled]="!selectedBook.isAvailable || selectedBook.availableCopies === 0"
+        >
+          📖 Borrow This Book
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Availability Status Modal -->
+  <div class="modal-overlay" *ngIf="showAvailabilityModal && availabilityInfo">
+    <div class="modal-content availability-modal">
+      <div class="modal-header">
+        <h3>📋 Availability Status</h3>
+        <button class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="availability-status-container">
+          <div class="status-icon">
+            <span *ngIf="availabilityInfo.status === 'Available'">✅</span>
+            <span *ngIf="availabilityInfo.status === 'Limited'">⚠️</span>
+            <span *ngIf="availabilityInfo.status === 'Unavailable'">❌</span>
+          </div>
+          
+          <div class="status-info">
+            <h4 class="status-title">{{ availabilityInfo.status }}</h4>
+            <p class="status-message">{{ availabilityInfo.message }}</p>
+            
+            <div class="additional-info" *ngIf="availabilityInfo.nextAvailableDate">
+              <p><strong>Expected Return:</strong> {{ availabilityInfo.nextAvailableDate | date:'fullDate' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Borrow Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showBorrowConfirmModal">
+    <div class="modal-content borrow-modal">
+      <div class="modal-header">
+        <h3>📚 Confirm Borrowing</h3>
+        <button class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="borrow-summary">
+          <div class="borrower-info">
+            <h4>Borrower Information</h4>
+            <p><strong>Name:</strong> {{ currentUser?.memberName }}</p>
+            <p><strong>Member ID:</strong> {{ currentUser?.memberId }}</p>
+          </div>
+
+          <div class="books-summary">
+            <h4>Books to Borrow</h4>
+            <div class="book-list">
+              <div class="book-item" *ngFor="let item of getSelectedBookDetails()">
+                <span class="book-title">{{ item.book.title }}</span>
+                <span class="book-quantity">Quantity: {{ item.quantity }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="borrow-details">
+            <div class="detail-row">
+              <span>Total Books:</span>
+              <span>{{ getTotalSelectedCopies() }}</span>
+            </div>
+            <div class="detail-row">
+              <span>Due Date:</span>
+              <span>{{ calculatedDueDate }}</span>
+            </div>
+            <div class="detail-row warning">
+              <span>Fine per day (if overdue):</span>
+              <span>₹{{ FINE_PER_DAY }}</span>
+            </div>
+          </div>
+
+          <div class="important-note">
+            <p><strong>⚠️ Important:</strong> Please return books on time. A fine of ₹{{ FINE_PER_DAY }} per day will be charged for late returns.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeModal()" [disabled]="isBorrowing">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmBorrow()" [disabled]="isBorrowing">
+          <span *ngIf="isBorrowing" class="loading-spinner"></span>
+          {{ isBorrowing ? 'Processing...' : 'Confirm Borrow' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

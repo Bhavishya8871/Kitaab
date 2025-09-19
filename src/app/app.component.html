@@ -1,0 +1,9 @@
+<div class="app-container">
+  <!-- Show navbar conditionally -->
+  <app-navbar *ngIf="showNavBar"></app-navbar>
+  
+  <!-- Main content -->
+  <main [class.with-navbar]="showNavBar" [class.without-navbar]="!showNavBar">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,0 +1,206 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="card-header">
+      <h1 class="login-title">Member Login</h1>
+      <p class="login-subtitle">Access your library account</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="email" class="form-label">
+          Email Address <span class="required">*</span>
+        </label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-control"
+          [class.error]="getFieldError('email')"
+          placeholder="Enter your email address"
+          autocomplete="email"
+        />
+        <div class="error-message" *ngIf="getFieldError('email')">
+          {{ getFieldError("email") }}
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password" class="form-label">
+          Password <span class="required">*</span>
+        </label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          class="form-control"
+          [class.error]="getFieldError('password')"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+        />
+        <div class="error-message" *ngIf="getFieldError('password')">
+          {{ getFieldError("password") }}
+        </div>
+      </div>
+
+      <!-- Login Button -->
+      <button
+        type="submit"
+        class="btn btn-primary login-btn"
+        [disabled]="!isFormValid || isLoading"
+      >
+        <span *ngIf="isLoading" class="loading-spinner"></span>
+        {{ isLoading ? "Signing In..." : "Login" }}
+      </button>
+
+      <div class="messages-section">
+      <!-- Error Message -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        <div class="alert-content">
+          <div class="alert-text">
+            <strong>Login Failed</strong>
+            <p>{{ errorMessage }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Message -->
+      <div class="alert alert-success" *ngIf="successMessage">
+        <div class="alert-content">
+          <div class="alert-text">
+            <strong>Success</strong>
+            <p>{{ successMessage }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <!-- Action Links -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="link-button"
+          (click)="onForgotPassword()"
+          [disabled]="isLoading"
+        >
+          Forgot Password?
+        </button>
+
+        <span class="separator">|</span>
+
+        <button
+          type="button"
+          class="link-button"
+          (click)="navigateToRegister()"
+          [disabled]="isLoading"
+        >
+          Register Now
+        </button>
+      </div>
+    </form>
+
+
+  <!-- Forgot Password Modal -->
+  <div
+    class="modal-overlay"
+    *ngIf="showForgotPassword"
+    (click)="closeForgotPassword()"
+  >
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Forgot Password</h3>
+        <button class="close-btn" (click)="closeForgotPassword()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Stage 1: Enter Email -->
+        <form
+          *ngIf="forgotStage === 'email'"
+          [formGroup]="forgotForm"
+          (ngSubmit)="submitForgotEmail()"
+        >
+          <label for="forgotEmail">Enter your registered email</label>
+          <input
+            id="forgotEmail"
+            type="email"
+            formControlName="email"
+            placeholder="example@domain.com"
+            class="form-control"
+          />
+          <small class="error" *ngIf="forgotForm.get('email')?.touched && forgotForm.get('email')?.invalid">
+            {{ getForgotFieldError('email') }}
+          </small>
+
+          <div class="error" *ngIf="forgotErrorMessage">{{ forgotErrorMessage }}</div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="forgotForm.get('email')?.invalid || isLoading"
+          >
+            Next
+          </button>
+        </form>
+
+        <!-- Stage 2: Enter Secret Answer -->
+        <form
+          *ngIf="forgotStage === 'answer'"
+          [formGroup]="forgotForm"
+          (ngSubmit)="submitForgotAnswer()"
+        >
+          <p><strong>Security Question:</strong> {{ secretQuestionText }}</p>
+          <input
+            type="text"
+            formControlName="answer"
+            placeholder="Enter your answer"
+            class="form-control"
+          />
+          <small class="error" *ngIf="forgotForm.get('answer')?.touched && forgotForm.get('answer')?.invalid">
+            {{ getForgotFieldError('answer') }}
+          </small>
+
+          <div class="error" *ngIf="forgotErrorMessage">{{ forgotErrorMessage }}</div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="forgotForm.get('answer')?.invalid || isLoading"
+          >
+            Verify
+          </button>
+        </form>
+
+        <!-- Stage 3: Reset Password -->
+        <form
+          *ngIf="forgotStage === 'reset'"
+          [formGroup]="forgotForm"
+          (ngSubmit)="submitResetPassword()"
+        >
+          <label for="newPassword">New Password</label>
+          <input
+            id="newPassword"
+            type="password"
+            formControlName="newPassword"
+            placeholder="Enter new password"
+            class="form-control"
+          />
+          <small class="error" *ngIf="forgotForm.get('newPassword')?.touched && forgotForm.get('newPassword')?.invalid">
+            {{ getForgotFieldError('newPassword') }}
+          </small>
+
+          <div class="success" *ngIf="forgotSuccessMessage">{{ forgotSuccessMessage }}</div>
+          <div class="error" *ngIf="forgotErrorMessage">{{ forgotErrorMessage }}</div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="forgotForm.get('newPassword')?.invalid || isLoading"
+          >
+            Reset Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
