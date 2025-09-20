@@ -71,50 +71,61 @@ export class HomepageComponent implements OnInit, OnDestroy {
 }
 
 
-  onSearch(): void {
-    if (this.searchQuery.trim()) {
-      this.router.navigate(['/books'], { 
-        queryParams: { q: this.searchQuery.trim() } 
-      });
-    } else {
-      this.router.navigate(['/books']);
-    }
-  }
+   
 
   // Keep all your existing navigation methods
-  navigateToViewBooks(): void {
-    this.router.navigate(['/books']);
+  // ✅ FIXED SEARCH METHOD
+onSearch(): void {
+  if (this.searchQuery.trim()) {
+    this.router.navigate(['/view'], { 
+      queryParams: { q: this.searchQuery.trim() } 
+    });
+  } else {
+    this.router.navigate(['/view']);
   }
+}
 
-  navigateToBorrowBooks(): void {
-    this.router.navigate(['/books']);
-  }
+// ✅ FIXED NAVIGATION METHODS
+navigateToViewBooks(): void {
+  this.router.navigate(['/view']);
+}
 
-  navigateToBorrowedBooks(): void {
-    this.router.navigate(['/my-books']);
-  }
+navigateToBorrowBooks(): void {
+  this.router.navigate(['/borrow']);
+}
 
-  navigateToDonateBooks(): void {
-    this.router.navigate(['/donate-books']);
-  }
+navigateToBorrowedBooks(): void {
+  this.router.navigate(['/borrowed-returned']);
+}
 
-  navigateToComplaints(): void {
-    this.router.navigate(['/complaints']);
-  }
+navigateToDonateBooks(): void {
+  this.router.navigate(['/donate']);
+}
 
-  navigateToProfile(): void {
-    this.router.navigate(['/profile']);
-  }
+navigateToComplaints(): void {
+  this.router.navigate(['/complaints']);
+}
 
-  borrowBook(book: Book): void {
-    if (book.isAvailable && book.availableCopies > 0) {
-      this.router.navigate(['/books'], { queryParams: { bookId: book.id } });
-    }
-  }
+navigateToProfile(): void {
+  this.router.navigate(['/profile']);
+}
 
-  viewBookDetails(book: Book): void {
-    this.router.navigate(['/books', book.id]);
+// ✅ FIXED BORROW BOOK METHOD
+borrowBook(book: Book): void {
+  if (book.isAvailable && book.availableCopies > 0) {
+    this.router.navigate(['/borrow'], { 
+      queryParams: { bookId: book.id } 
+    });
   }
+}
+
+// ✅ FIXED VIEW BOOK DETAILS METHOD
+viewBookDetails(book: Book): void {
+  this.router.navigate(['/view'], { 
+    queryParams: { bookId: book.id } 
+  });
+}
+
 
   // Keep your existing utility methods
   getStarArray(rating: number): number[] {
