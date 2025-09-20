@@ -20,7 +20,7 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   showForgotPassword = false;
-  returnUrl = '/homepage';
+  returnUrl = ' /homepage';
 
   // Forgot password flow properties
   forgotStage: 'email' | 'answer' | 'reset' = 'email';
@@ -78,50 +78,112 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  onSubmit(): void {
-    if (this.loginForm.valid) {
-      this.isLoading = true;
-      this.clearMessages();
+  // ✅ FIXED onSubmit method
+onSubmit(): void {
+  console.log('🔘 Login form submitted');
+  
+  if (this.loginForm.valid) {
+    this.isLoading = true;
+    this.clearMessages();
 
-      const credentials: LoginRequest = {
-        email: this.loginForm.value.email.trim().toLowerCase(),
-        password: this.loginForm.value.password
-      };
+    const credentials: LoginRequest = {
+      email: this.loginForm.value.email.trim().toLowerCase(),
+      password: this.loginForm.value.password
+    };
 
-      this.authService.login(credentials).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.showSuccess(`Welcome back, ${response.user?.memberName}! Redirecting...`);
-            setTimeout(() => {
-              this.router.navigate([this.returnUrl]);
-            }, 1500);
-          } else {
-            this.isLoading = false;
-            this.showError(response.message || 'Login failed. Please try again.');
-          }
-        },
-        error: (error) => {
+    console.log('📤 Attempting login for:', credentials.email);
+
+    this.authService.login(credentials).subscribe({
+      next: (response) => {
+        console.log('📨 Login response:', response);
+        
+        if (response.success) {
           this.isLoading = false;
-          let errorMsg = 'Login failed. Please try again.';
+          // ✅ Fixed: Only use properties that exist in AuthUser
+          const userName = response.user?.memberName || 
+                         credentials.email.split('@')[0] || 
+                         'User';
           
-          if (error.status === 401) {
-            errorMsg = 'Invalid email or password.';
-          } else if (error.status === 403) {
-            errorMsg = 'Account is suspended. Please contact support.';
-          } else if (error.status === 0) {
-            errorMsg = 'Unable to connect to server. Please check your connection.';
-          } else if (error.error?.message) {
-            errorMsg = error.error.message;
-          }
+          this.showSuccess(`Welcome back, ${userName}! Redirecting...`);
           
-          this.showError(errorMsg);
+          setTimeout(() => {
+            console.log('🚀 Navigating to:', this.returnUrl);
+            this.router.navigate([this.returnUrl]);
+          }, 1500);
+        } else {
+          this.isLoading = false;
+          this.showError(response.message || 'Login failed. Please try again.');
         }
-      });
-    } else {
-      this.markFormGroupTouched();
-      this.showError('Please fill in all required fields correctly.');
-    }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('❌ Login error:', error);
+        this.showError('An unexpected error occurred. Please try again.');
+      }
+    });
+  } else {
+    this.markFormGroupTouched();
+    this.showError('Please fill in all required fields correctly.');
   }
+}
+
+
+  // ✅ Add quick test login buttons for development
+  quickLogin(userType: 'admin' | 'member' = 'member'): void {
+    console.log('🚀 Quick login as:', userType);
+    
+    const testCredentials = userType === 'admin' 
+      ? { email: 'admin@library.com', password: 'admin123' }
+      : { email: 'member@library.com', password: 'member123' };
+
+    this.loginForm.patchValue(testCredentials);
+    this.onSubmit();
+  }
+
+  // onSubmit(): void {
+  //   if (this.loginForm.valid) {
+  //     this.isLoading = true;
+  //     this.clearMessages();
+
+  //     const credentials: LoginRequest = {
+  //       email: this.loginForm.value.email.trim().toLowerCase(),
+  //       password: this.loginForm.value.password
+  //     };
+
+  //     this.authService.login(credentials).subscribe({
+  //       next: (response) => {
+  //         if (response.success) {
+  //           this.showSuccess(`Welcome back, ${response.user?.memberName}! Redirecting...`);
+  //           setTimeout(() => {
+  //             this.router.navigate([this.returnUrl]);
+  //           }, 1500);
+  //         } else {
+  //           this.isLoading = false;
+  //           this.showError(response.message || 'Login failed. Please try again.');
+  //         }
+  //       },
+  //       error: (error) => {
+  //         this.isLoading = false;
+  //         let errorMsg = 'Login failed. Please try again.';
+          
+  //         if (error.status === 401) {
+  //           errorMsg = 'Invalid email or password.';
+  //         } else if (error.status === 403) {
+  //           errorMsg = 'Account is suspended. Please contact support.';
+  //         } else if (error.status === 0) {
+  //           errorMsg = 'Unable to connect to server. Please check your connection.';
+  //         } else if (error.error?.message) {
+  //           errorMsg = error.error.message;
+  //         }
+          
+  //         this.showError(errorMsg);
+  //       }
+  //     });
+  //   } else {
+  //     this.markFormGroupTouched();
+  //     this.showError('Please fill in all required fields correctly.');
+  //   }
+  // }
 
   // Forgot Password Flow
   onForgotPassword(): void {
