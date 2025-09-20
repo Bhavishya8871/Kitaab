@@ -1,60 +1,81 @@
 import { Routes } from '@angular/router';
+import { MemberRegistrationComponent } from './components/member-registration/member-registration.component';
+import { LoginComponent } from './components/login/login.component';
+import { HomepageComponent } from './components/homepage/homepage.component';
+import { DonateBooksComponent } from './components/donate-books/donate-books.component';
+import { ComplaintsComponent } from './components/complaints/complaints.component';
+import { ProfileComponent } from './components/profile/profile.component';
+import { MyBooksComponent } from './components/my-books/my-books.component';
+import { BooksComponent } from './components/books/books.component';
+import { FinesComponent } from './components/fines/fines.component';
+
+// ✅ Import your guards
 import { authGuard } from './Guards/auth.guard';
 import { guestGuard } from './Guards/guest.guard';
 
 export const routes: Routes = [
-  {
-    path: 'login',
-    loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent),
-    canActivate: [guestGuard]
+  { 
+    path: '', 
+    redirectTo: '/login', 
+    pathMatch: 'full' 
   },
-  {
-    path: 'register',
-    loadComponent: () => import('./components/member-registration/member-registration.component').then(m => m.MemberRegistrationComponent),
-    canActivate: [guestGuard]
+  { 
+    path: 'login', 
+    component: LoginComponent,
+    canActivate: [guestGuard] // ✅ Only allow if NOT logged in
   },
-  {
-    path: 'homepage',
-    loadComponent: () => import('./components/homepage/homepage.component').then(m => m.HomepageComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'register', 
+    component: MemberRegistrationComponent,
+    canActivate: [guestGuard] // ✅ Only allow if NOT logged in
   },
-  {
-    path: 'books',
-    loadComponent: () => import('./components/books/books.component').then(m => m.BooksComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'homepage', 
+    component: HomepageComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
   },
-  {
-    path: 'my-books',
-    loadComponent: () => import('./components/my-books/my-books.component').then(m => m.MyBooksComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'borrow', 
+    component: BooksComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
+  }, 
+  { 
+    path: 'view', 
+    component: BooksComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
+  }, 
+  { 
+    path: 'donate', 
+    component: DonateBooksComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
   },
-  {
-    path: 'profile',
-    loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'complaints', 
+    component: ComplaintsComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
   },
-  {
-    path: 'complaints',
-    loadComponent: () => import('./components/complaints/complaints.component').then(m => m.ComplaintsComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'profile', 
+    component: ProfileComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
   },
-  {
-    path: 'donate-books',
-    loadComponent: () => import('./components/donate-books/donate-books.component').then(m => m.DonateBooksComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'borrowed-returned', 
+    component: MyBooksComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
   },
-  {
-    path: 'fines',
-    loadComponent: () => import('./components/fines/fines.component').then(m => m.FinesComponent),
-    canActivate: [authGuard]
+  { 
+    path: 'fines', 
+    component: FinesComponent,
+    canActivate: [authGuard] // ✅ Only allow if logged in
   },
-  {
-    path: '',
-    redirectTo: '/homepage',
-    pathMatch: 'full'
+  { 
+    path: 'payments', 
+    redirectTo: '/fines', 
+    pathMatch: 'full' 
   },
   {
     path: '**',
-    redirectTo: '/homepage'
+    redirectTo: '/login' // ✅ Redirect unknown routes to login
   }
 ];
