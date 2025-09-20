@@ -54,6 +54,27 @@
         {{ isLoading ? "Signing In..." : "Login" }}
       </button>
 
+      <!-- shoudl be remove after connceting with backend  -->
+      <div class="quick-login-section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+  <small class="text-muted">Quick Test Login (Development Only):</small><br>
+  <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+    <button 
+      type="button" 
+      class="btn btn-outline-primary btn-sm" 
+      (click)="quickLogin('member')"
+      [disabled]="isLoading">
+      Test as Member
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-outline-success btn-sm" 
+      (click)="quickLogin('admin')"
+      [disabled]="isLoading">
+      Test as Admin
+    </button>
+  </div>
+</div>
+
       <div class="messages-section">
       <!-- Error Message -->
       <div class="alert alert-error" *ngIf="errorMessage">
