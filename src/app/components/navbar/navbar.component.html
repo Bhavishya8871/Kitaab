@@ -1,4 +1,4 @@
-<nav class="modern-navbar" (click)="closeAllDropdowns()">
+<nav class="modern-navbar" (click)="closeDropdowns()">
   <div class="navbar-container">
     
     <!-- Left: Brand/Logo -->
@@ -21,7 +21,7 @@
     <!-- Right: Search + User Profile -->
     <div class="navbar-actions">
       <!-- Search Icon -->
-      <button class="search-btn" (click)="onSearchSubmit()" aria-label="Search Books">
+      <button class="search-btn" (click)="onSearchClick()" aria-label="Search Books">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -46,8 +46,7 @@
           <button class="dropdown-item" (click)="navigateToProfile()">
             <span class="item-icon">👤</span> My Profile
           </button>
-          
-<button class="dropdown-item" (click)="navigateToMyBooks()">
+          <button class="dropdown-item" (click)="navigateToBorrowedBooks()">
             <span class="item-icon">📚</span> My Books
           </button>
           <div class="dropdown-divider"></div>
